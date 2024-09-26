@@ -68,7 +68,9 @@ module.exports = (db, bucket) => {
             const files = await files_collection.find({}, 
                 {projection: {_id : 1, filename: 1}}
             ).toArray();
-            res.status(200).json(files);
+            const fileList = files.map(file => `ID: "${file._id}", Filename: "${file.filename}"`).join('\n');
+            
+            res.status(200).send(fileList);
         } catch (error) {
             console.error(error);
             res.status(500).send('Error Loading files.');
