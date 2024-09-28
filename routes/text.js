@@ -21,5 +21,16 @@ module.exports = (db) => {
         }
     });
 
+    router.get('/all', async(req, res) => {
+        try {
+            const allTexts = await textCollection.find().toArray();
+            const texts = allTexts.map((el, index) => `${index} - ${el.text}`).join('\n');
+            res.send(texts);
+            
+        } catch (error) {
+            
+        }
+    })
+
     return router;
 };

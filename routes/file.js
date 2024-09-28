@@ -9,6 +9,7 @@ const upload = multer({ storage });
 
 module.exports = (db, bucket) => {
     const files_collection = db.collection('uploads.files');
+    const chunks_collection = db.collection('uploads.chunks');
     router.post('/upload', upload.single('file'), (req, res) => {
         if (!req.file) {
             return res.status(400).send({ error: 'No file uploaded' });
@@ -76,6 +77,20 @@ module.exports = (db, bucket) => {
             res.status(500).send('Error Loading files.');
         }
     });
+
+    router.delete('/delete/:id', async(req, res) => {
+        try {
+            const idField = new ObjectId(req.params.id);            
+            const result = await files_collection.findOneAndDelete({_id : idField});
+            if (!result.value) {
+                return res.status(404).send('File not found');
+            }
+            await chunks_collection.findOneAndDelete({files_id: idField});
+            res.send("file deleted");
+        } catch (error) {
+            res.send("Error deleting file");
+        }
+    })
 
     return router;
 };
