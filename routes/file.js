@@ -67,9 +67,9 @@ module.exports = (db, bucket) => {
     router.get('/all', async(req, res) => {
         try {
             const files = await files_collection.find({}, 
-                {projection: {_id : 1, filename: 1}}
+                {projection: {_id : 1, filename: 1, length: 1}}
             ).toArray();
-            const fileList = files.map(file => `ID: "${file._id}", Filename: "${file.filename}"`).join('\n');
+            const fileList = files.map(file => `ID: "${file._id}", Filename: "${file.filename}, size: "${FormatFileSize(file.length)}"`).join('\n');
             
             res.status(200).send(fileList);
         } catch (error) {
@@ -94,3 +94,13 @@ module.exports = (db, bucket) => {
 
     return router;
 };
+
+function FormatFileSize(bytes){
+    if (bytes >= 1024 * 1024) {
+        return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+    } else if (bytes >= 1024) {
+        return (bytes / 1024).toFixed(2) + ' KB';
+    } else {
+        return bytes + ' bytes';
+    }
+}
