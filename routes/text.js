@@ -30,6 +30,25 @@ module.exports = (db) => {
         } catch (error) {
             
         }
+    });
+
+    router.delete('/delete/:index', async(req, res) => {
+        try {
+            let index = parseInt(req.params.index);
+            const allTexts = await textCollection.find().toArray();
+
+            const textDelete = allTexts[index];
+
+            if(textDelete){
+                await textCollection.findOneAndDelete({_id: textDelete._id});
+                return res.send("Done");
+            }           
+
+            res.send("Error");
+            
+        } catch (error) {
+            
+        }
     })
 
     return router;
