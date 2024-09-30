@@ -24,6 +24,9 @@ app.use(express.urlencoded({ extended: true }));
         
         app.use('/files', fileRoutes(db, bucket));
         app.use('/text', textRoute(db));
+
+        app.get("/", (req, res) => res.send("Working"));
+
         app.listen(process.env.PORT, () => {
             console.log(`server running on ${process.env.PORT}`);
         });
