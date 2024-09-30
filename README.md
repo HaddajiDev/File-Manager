@@ -15,7 +15,21 @@ http://localhost:5000
 
 ### Files Routes
 
-1. **Upload a File**
+1. **List All Files**
+
+    - **Endpoint**: `GET /files/all`
+    - **Description**: Retrieves a list of all files with their ID, filename, and size (in KB or MB).
+    - **Curl Command**:
+      ```bash
+      curl http://localhost:5000/files/all
+      ```
+    - **Response Example**:
+      ```
+      ID: "66f426e38c65b40cff414e8b", Filename: "test.txt", Size: "1.23 MB"
+      ID: "66f5919a9bfbe27a99f26a8b", Filename: "script1.py", Size: "500 bytes"
+      ```
+
+2. **Upload a File**
 
     - **Endpoint**: `POST /files/upload`
     - **Description**: Uploads a file to the server and stores it in MongoDB's GridFS.
@@ -30,7 +44,7 @@ http://localhost:5000
       }
       ```
 
-2. **Download a File by ID**
+3. **Download a File by ID**
 
     - **Endpoint**: `GET /files/download/:id`
     - **Description**: Downloads a file stored in GridFS using its unique ID.
@@ -39,20 +53,6 @@ http://localhost:5000
       curl -o downloaded_file.txt http://localhost:5000/files/download/<fileId>
       ```
     - **Response**: The file will be downloaded with the name `downloaded_file.txt`.
-
-3. **List All Files**
-
-    - **Endpoint**: `GET /files/all`
-    - **Description**: Retrieves a list of all files with their ID, filename, and size (in KB or MB).
-    - **Curl Command**:
-      ```bash
-      curl http://localhost:5000/files/all
-      ```
-    - **Response Example**:
-      ```
-      ID: "66f426e38c65b40cff414e8b", Filename: "test.txt", Size: "1.23 MB"
-      ID: "66f5919a9bfbe27a99f26a8b", Filename: "script1.py", Size: "500 bytes"
-      ```
 
 4. **Delete a File by ID**
 
@@ -77,7 +77,7 @@ http://localhost:5000
     - **Description**: Uploads a text entry to the server.
     - **Curl Command**:
       ```bash
-      curl -X POST -H "Content-Type: application/json" -d '{"text": "Your text here"}' http://localhost:5000/texts/upload
+      curl -d "text=Your text here" http://localhost:5000/text/upload
       ```
     - **Response**: 
       ```json
@@ -92,7 +92,7 @@ http://localhost:5000
     - **Description**: Retrieves a list of all text entries.
     - **Curl Command**:
       ```bash
-      curl http://localhost:5000/texts/all
+      curl http://localhost:5000/text/all
       ```
     - **Response Example**:
       ```
@@ -106,7 +106,7 @@ http://localhost:5000
     - **Description**: Deletes a text entry by its index in the list.
     - **Curl Command**:
       ```bash
-      curl -X DELETE http://localhost:5000/texts/delete/0
+      curl -X DELETE http://localhost:5000/text/delete/0
       ```
     - **Response**:
       ```json
