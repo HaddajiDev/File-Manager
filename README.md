@@ -1,5 +1,10 @@
 
 # API Documentation
+## Environment variables
+```
+PORT = 5000
+URI = your_mongodb_connection_string
+```
 
 ## Overview
 This API allows you to upload, download, list, and delete files using MongoDB's GridFS, as well as manage text entries. 
