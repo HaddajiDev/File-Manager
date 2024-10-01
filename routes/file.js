@@ -69,7 +69,7 @@ module.exports = (db, bucket) => {
             const files = await files_collection.find({}, 
                 {projection: {_id : 1, filename: 1, length: 1}}
             ).toArray();
-            const fileList = files.map(file => `ID: "${file._id}", Filename: "${file.filename}, size: "${FormatFileSize(file.length)}"`).join('\n');
+            const fileList = files.map(file => `ID: "${file._id}", Filename: "${file.filename}", size: "${FormatFileSize(file.length)}"`).join('\n');
             
             res.status(200).send(fileList);
         } catch (error) {
