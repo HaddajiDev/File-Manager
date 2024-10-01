@@ -78,23 +78,31 @@ module.exports = (db, bucket) => {
         }
     });
 
-    router.delete('/delete/:id', async(req, res) => {
+    router.delete('/delete/:id', async (req, res) => {
         try {
             const idField = new ObjectId(req.params.id);
-            const file = await files_collection.find({_id : idField});
-            if(file){
-                const result = await files_collection.findOneAndDelete({_id : idField});            
-                await chunks_collection.findOneAndDelete({files_id: idField});
-                res.send("file deleted");
+
+            const file = await files_collection.findOne({ _id: idField });
+ 
+            if (!file) {
+                return res.status(404).send("File not found");
             }
-            else{
-                res.send("file not found");
-            }   
-            
+
+            const result = await files_collection.deleteOne({ _id: idField });
+            await chunks_collection.deleteMany({ files_id: idField });
+    
+            if (result.deletedCount > 0) {
+                return res.status(200).send({ msg: "File deleted" });
+            } else {
+                return res.status(500).send({ msg: "Error deleting file" });
+            }
+    
         } catch (error) {
-            res.send("Error deleting file");
+            console.error("Error deleting file:", error);
+            return res.status(500).send("Server error occurred while deleting the file");
         }
-    })
+    });
+    
 
     return router;
 };
