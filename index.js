@@ -6,6 +6,7 @@ require('dotenv').config();
 const connect = require('./db_connect');
 const fileRoutes = require('./routes/file');
 const textRoute = require('./routes/text');
+const status = require('./routes/status');
 const { GridFSBucket } = require('mongodb');
 
 const app = express();
@@ -24,6 +25,7 @@ app.use(express.urlencoded({ extended: true }));
         
         app.use('/files', fileRoutes(db, bucket));
         app.use('/text', textRoute(db));
+        app.use('/server', status(db));
 
         app.get("/", (req, res) => res.send("Working"));
 

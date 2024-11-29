@@ -10,7 +10,15 @@ const upload = multer({ storage });
 module.exports = (db, bucket) => {
     const files_collection = db.collection('uploads.files');
     const chunks_collection = db.collection('uploads.chunks');
-    router.post('/upload', upload.single('file'), (req, res) => {
+    const statusCollection = db.collection('status');
+
+    router.post('/upload', upload.single('file'), async(req, res) => {
+
+        const ServerStatus = await statusCollection.findOne({_id : "server_status"});
+        if(ServerStatus.status === "offline"){
+            return res.send("server is offline");
+        }
+
         if (!req.file) {
             return res.status(400).send({ error: 'No file uploaded' });
         }
@@ -25,10 +33,10 @@ module.exports = (db, bucket) => {
             readableStream.pipe(uploadStream)
                 .on('error', (error) => {
                     console.error('Error uploading file:', error);
-                    return res.status(500).send({ error: 'File upload failed' });
+                    return res.status(500).send("error while uploading file");
                 })
                 .on('finish', () => {
-                    res.status(200).send({ msg: 'File uploaded successfully' });
+                    res.status(200).send("File uploaded successfully");
                 });
 
         } catch (error) {
@@ -37,8 +45,13 @@ module.exports = (db, bucket) => {
         }
     });
 
-    router.get('/download/:id', (req, res) => {
+    router.get('/download/:id', async(req, res) => {
         try {
+            const ServerStatus = await statusCollection.findOne({_id : "server_status"});
+            if(ServerStatus.status === "offline"){
+                return res.send("server is offline");
+            }
+
             const fileId = req.params.id;
 
             const objectID = new ObjectId(fileId);
@@ -66,6 +79,10 @@ module.exports = (db, bucket) => {
 
     router.get('/all', async(req, res) => {
         try {
+            const ServerStatus =  await statusCollection.findOne({_id : "server_status"});
+            if(ServerStatus.status === "offline"){
+                return res.send("server is offline");
+            }
             const files = await files_collection.find({}, 
                 {projection: {_id : 1, filename: 1, length: 1}}
             ).toArray();
@@ -80,6 +97,9 @@ module.exports = (db, bucket) => {
 
     router.delete('/delete/:id', async (req, res) => {
         try {
+            if(ServerStatus.status === "offline"){
+                return res.send("server is offline");
+            }
             const idField = new ObjectId(req.params.id);
 
             const file = await files_collection.findOne({ _id: idField });
@@ -92,9 +112,9 @@ module.exports = (db, bucket) => {
             await chunks_collection.deleteMany({ files_id: idField });
     
             if (result.deletedCount > 0) {
-                return res.status(200).send({ msg: "File deleted" });
+                return res.status(200).send("File deleted");
             } else {
-                return res.status(500).send({ msg: "Error deleting file" });
+                return res.status(500).send("error deleting file");
             }
     
         } catch (error) {
