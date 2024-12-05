@@ -2,7 +2,7 @@ const express = require('express');
 const { ObjectId } = require('mongodb');
 const multer = require('multer');
 const { Readable } = require('stream');
-
+const progress = require('progress-stream');
 const router = express.Router();
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
@@ -14,35 +14,48 @@ module.exports = (db, bucket) => {
 
     router.post('/upload', upload.single('file'), async(req, res) => {
 
-        const ServerStatus = await statusCollection.findOne({_id : "server_status"});
-        if(ServerStatus.status === "offline"){
+        const ServerStatus = await statusCollection.findOne({ _id: "server_status" });
+        if (ServerStatus.status === "offline") {
             return res.send("server is offline");
         }
 
         if (!req.file) {
-            return res.status(400).send({ error: 'No file uploaded' });
+            return res.status(400).send("No file uploaded");
         }
 
         try {
             const readableStream = new Readable();
             readableStream.push(req.file.buffer);
             readableStream.push(null);
+  
+            const progressStream = progress({
+                length: req.file.buffer.length,
+                time: 100,
+            });
+
+            progressStream.on('progress', (progressData) => {
+                process.stdout.clearLine();
+                process.stdout.cursorTo(0);
+                process.stdout.write(`Uploading: ${(progressData.percentage).toFixed(2)}%`);
+            });
 
             const uploadStream = bucket.openUploadStream(req.file.originalname);
 
-            readableStream.pipe(uploadStream)
+            readableStream.pipe(progressStream).pipe(uploadStream)
                 .on('error', (error) => {
                     console.error('Error uploading file:', error);
-                    return res.status(500).send("error while uploading file");
+                    return res.status(500).send("Error while uploading file");
                 })
                 .on('finish', () => {
+                    console.log('\nUpload complete!');
                     res.status(200).send("File uploaded successfully");
                 });
 
         } catch (error) {
             console.error('Error during file upload:', error);
-            res.status(500).send({ error: 'Server error' });
+            res.status(500).send("Error during file upload");
         }
+
     });
 
     router.get('/download/:id', async(req, res) => {
@@ -97,6 +110,7 @@ module.exports = (db, bucket) => {
 
     router.delete('/delete/:id', async (req, res) => {
         try {
+            const ServerStatus =  await statusCollection.findOne({_id : "server_status"});
             if(ServerStatus.status === "offline"){
                 return res.send("server is offline");
             }
