@@ -32,10 +32,10 @@ module.exports = (db, bucket) => {
             readableStream.pipe(uploadStream)
                 .on('error', (error) => {
                     console.error('Error uploading file:', error);
-                    return res.status(500).send({ error: 'File upload failed' });
+                    return res.status(500).send("File upload failed");
                 })
                 .on('finish', () => {
-                    res.status(200).send({ msg: 'File uploaded successfully' });
+                    res.status(200).send("File uploaded successfully");
                 });
 
         } catch (error) {
