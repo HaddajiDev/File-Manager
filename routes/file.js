@@ -2,7 +2,6 @@ const express = require('express');
 const { ObjectId } = require('mongodb');
 const multer = require('multer');
 const { Readable } = require('stream');
-const progress = require('progress-stream');
 const router = express.Router();
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
@@ -27,28 +26,16 @@ module.exports = (db, bucket) => {
             const readableStream = new Readable();
             readableStream.push(req.file.buffer);
             readableStream.push(null);
-  
-            const progressStream = progress({
-                length: req.file.buffer.length,
-                time: 100,
-            });
-
-            progressStream.on('progress', (progressData) => {
-                process.stdout.clearLine();
-                process.stdout.cursorTo(0);
-                process.stdout.write(`Uploading: ${(progressData.percentage).toFixed(2)}%`);
-            });
 
             const uploadStream = bucket.openUploadStream(req.file.originalname);
 
-            readableStream.pipe(progressStream).pipe(uploadStream)
+            readableStream.pipe(uploadStream)
                 .on('error', (error) => {
                     console.error('Error uploading file:', error);
-                    return res.status(500).send("Error while uploading file");
+                    return res.status(500).send({ error: 'File upload failed' });
                 })
                 .on('finish', () => {
-                    console.log('\nUpload complete!');
-                    res.status(200).send("File uploaded successfully");
+                    res.status(200).send({ msg: 'File uploaded successfully' });
                 });
 
         } catch (error) {
