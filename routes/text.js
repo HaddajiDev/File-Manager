@@ -1,4 +1,3 @@
-// routes/text.js
 const express = require('express');
 const router = express.Router();
 const { ObjectId } = require('mongodb');
@@ -6,7 +5,15 @@ const { ObjectId } = require('mongodb');
 module.exports = (db) => {
     const textCollection = db.collection('texts');
     const statusCollection = db.collection('status');
-    router.post('/upload', async (req, res) => {
+
+    const checkPassword = (req, res, next) => {
+        if (req.query.password !== process.env.PASSWORD) {
+            return res.status(403).send("Unauthorized: Incorrect password");
+        }
+        next();
+    };
+
+    router.post('/upload', checkPassword, async (req, res) => {
         try {
             const ServerStatus = await statusCollection.findOne({_id : "server_status"});
             if(ServerStatus.status === "offline"){
@@ -26,7 +33,7 @@ module.exports = (db) => {
         }
     });
 
-    router.get('/all', async(req, res) => {
+    router.get('/all', checkPassword, async(req, res) => {
         try {
             const ServerStatus = await statusCollection.findOne({_id : "server_status"});
             if(ServerStatus.status === "offline"){
@@ -36,13 +43,13 @@ module.exports = (db) => {
             const allTexts = await textCollection.find().toArray();
             const texts = allTexts.map((el, index) => `${index} - ${el.text}`).join('\n');
             res.send(texts);
-            
         } catch (error) {
-            
+            console.error(error);
+            res.status(500).send("Error retrieving texts");
         }
     });
 
-    router.delete('/delete/:index', async(req, res) => {
+    router.delete('/delete/:index', checkPassword, async(req, res) => {
         try {
             const ServerStatus = await statusCollection.findOne({_id : "server_status"});
             if(ServerStatus.status === "offline"){
@@ -60,11 +67,11 @@ module.exports = (db) => {
             }           
 
             res.send("error deleting text");
-            
         } catch (error) {
-            
+            console.error(error);
+            res.status(500).send("Server error while deleting text");
         }
-    })
+    });
 
     return router;
 };

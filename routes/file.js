@@ -11,7 +11,16 @@ module.exports = (db, bucket) => {
     const chunks_collection = db.collection('uploads.chunks');
     const statusCollection = db.collection('status');
 
-    router.post('/upload', upload.single('file'), async(req, res) => {
+    function checkPassword(req, res) {
+        if (req.query.password !== process.env.PASSWORD) {
+            res.status(401).send("Unauthorized: Incorrect password.");
+            return false;
+        }
+        return true;
+    }
+
+    router.post('/upload', upload.single('file'), async (req, res) => {
+        if (!checkPassword(req, res)) return;
 
         const ServerStatus = await statusCollection.findOne({ _id: "server_status" });
         if (ServerStatus.status === "offline") {
@@ -42,20 +51,19 @@ module.exports = (db, bucket) => {
             console.error('Error during file upload:', error);
             res.status(500).send("Error during file upload");
         }
-
     });
 
-    router.get('/download/:id', async(req, res) => {
+    router.get('/download/:id', async (req, res) => {
+        if (!checkPassword(req, res)) return;
+
         try {
-            const ServerStatus = await statusCollection.findOne({_id : "server_status"});
-            if(ServerStatus.status === "offline"){
+            const ServerStatus = await statusCollection.findOne({ _id: "server_status" });
+            if (ServerStatus.status === "offline") {
                 return res.send("server is offline");
             }
 
             const fileId = req.params.id;
-
             const objectID = new ObjectId(fileId);
-
             const downloadStream = bucket.openDownloadStream(objectID);
 
             downloadStream.on('data', (chunk) => {
@@ -77,15 +85,15 @@ module.exports = (db, bucket) => {
         }
     });
 
-    router.get('/all', async(req, res) => {
+    router.get('/all', async (req, res) => {
+        if (!checkPassword(req, res)) return;
+
         try {
-            const ServerStatus =  await statusCollection.findOne({_id : "server_status"});
-            if(ServerStatus.status === "offline"){
+            const ServerStatus = await statusCollection.findOne({ _id: "server_status" });
+            if (ServerStatus.status === "offline") {
                 return res.send("server is offline");
             }
-            const files = await files_collection.find({}, 
-                {projection: {_id : 1, filename: 1, length: 1}}
-            ).toArray();
+            const files = await files_collection.find({}, { projection: { _id: 1, filename: 1, length: 1 } }).toArray();
             const fileList = files.map(file => `ID: "${file._id}", Filename: "${file.filename}", size: "${FormatFileSize(file.length)}"`).join('\n');
             
             res.status(200).send(fileList);
@@ -96,13 +104,14 @@ module.exports = (db, bucket) => {
     });
 
     router.delete('/delete/:id', async (req, res) => {
+        if (!checkPassword(req, res)) return;
+
         try {
-            const ServerStatus =  await statusCollection.findOne({_id : "server_status"});
-            if(ServerStatus.status === "offline"){
+            const ServerStatus = await statusCollection.findOne({ _id: "server_status" });
+            if (ServerStatus.status === "offline") {
                 return res.send("server is offline");
             }
             const idField = new ObjectId(req.params.id);
-
             const file = await files_collection.findOne({ _id: idField });
  
             if (!file) {
@@ -115,7 +124,7 @@ module.exports = (db, bucket) => {
             if (result.deletedCount > 0) {
                 return res.status(200).send("File deleted");
             } else {
-                return res.status(500).send("error deleting file");
+                return res.status(500).send("Error deleting file");
             }
     
         } catch (error) {
@@ -123,12 +132,11 @@ module.exports = (db, bucket) => {
             return res.status(500).send("Server error occurred while deleting the file");
         }
     });
-    
 
     return router;
 };
 
-function FormatFileSize(bytes){
+function FormatFileSize(bytes) {
     if (bytes >= 1024 * 1024) {
         return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
     } else if (bytes >= 1024) {
